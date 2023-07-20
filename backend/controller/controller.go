@@ -17,12 +17,12 @@ func NewController(size uint) Controller {
 	}
 }
 
-func (controller *Controller) AddView(c chan<- (model.UpdateMessage)) {
+func (controller *Controller) AddView(c chan<- (model.UpdateMessage)) model.Mark {
 	// acquire lock on mutex
 	controller.mutex.Lock()
 	defer controller.mutex.Unlock()
 
-	controller.model.AddListener(c)
+	return controller.model.AddListener(c)
 }
 
 func isSafePos(pos model.Pos, size uint) bool {
@@ -74,4 +74,12 @@ func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
 	// finalize move
 	controller.model.PutMark(pos, mark)
 	return nil
+}
+
+func (controller *Controller) Close() {
+	// acquire lock on mutex
+	controller.mutex.Lock()
+	defer controller.mutex.Unlock()
+
+	controller.model.Close()
 }

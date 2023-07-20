@@ -47,8 +47,18 @@ func NewModel(size uint) Model {
 	}
 }
 
-func (model *Model) AddListener(c chan<- (UpdateMessage)) {
+func (model *Model) Close() {
+	for _, c := range model.listeners {
+		close(c)
+	}
+}
+
+func (model *Model) AddListener(c chan<- (UpdateMessage)) Mark {
 	model.listeners = append(model.listeners, c)
+	if len(model.listeners) > 2 {
+		return NoMark
+	}
+	return (Mark)(len(model.listeners))
 }
 
 func (model *Model) PutMark(p Pos, m Mark) {
