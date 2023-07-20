@@ -72,9 +72,12 @@ func (model *Model) PutMark(p Pos, m Mark) {
 		Mark:   m,
 		Winner: model.CheckWinner(),
 	}
-	for _, c := range model.listeners {
-		c <- message
-	}
+	go func() {
+		for _, c := range model.listeners {
+			c <- message
+		}
+	}()
+
 }
 
 func (model *Model) CheckWinner() Winner {
