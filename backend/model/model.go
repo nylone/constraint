@@ -53,12 +53,12 @@ func (model *Model) Close() {
 	}
 }
 
-func (model *Model) AddListener(c chan<- (UpdateMessage)) Mark {
+func (model *Model) AddListener(c chan<- (UpdateMessage)) (Mark, Field) {
 	model.listeners = append(model.listeners, c)
 	if len(model.listeners) > 2 {
-		return NoMark
+		return NoMark, model.Field
 	}
-	return (Mark)(len(model.listeners))
+	return (Mark)(len(model.listeners)), model.Field
 }
 
 func (model *Model) PutMark(p Pos, m Mark) {

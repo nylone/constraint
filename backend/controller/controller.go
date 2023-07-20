@@ -17,7 +17,7 @@ func NewController(size uint) Controller {
 	}
 }
 
-func (controller *Controller) AddView(c chan<- (model.UpdateMessage)) model.Mark {
+func (controller *Controller) AddView(c chan<- (model.UpdateMessage)) (model.Mark, model.Field) {
 	// acquire lock on mutex
 	controller.mutex.Lock()
 	defer controller.mutex.Unlock()
