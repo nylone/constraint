@@ -29,10 +29,9 @@ type Pos struct {
 }
 
 type Model struct {
-	Size      uint
-	Field     Field
-	History   []Pos
-	listeners []chan<- (UpdateMessage)
+	Size    uint
+	Field   Field
+	History []Pos
 }
 
 func NewModel(size uint) Model {
@@ -47,37 +46,10 @@ func NewModel(size uint) Model {
 	}
 }
 
-func (model *Model) Close() {
-	for _, c := range model.listeners {
-		close(c)
-	}
-}
-
-func (model *Model) AddListener(c chan<- (UpdateMessage)) (Mark, Field) {
-	model.listeners = append(model.listeners, c)
-	if len(model.listeners) > 2 {
-		return NoMark, model.Field
-	}
-	return (Mark)(len(model.listeners)), model.Field
-}
-
 func (model *Model) PutMark(p Pos, m Mark) {
 	// edit the model
 	model.Field[p.X][p.Y] = m
 	model.History = append(model.History, p)
-
-	// update the subscribed entities
-	message := UpdateMessage{
-		Pos:    p,
-		Mark:   m,
-		Winner: model.CheckWinner(),
-	}
-	go func() {
-		for _, c := range model.listeners {
-			c <- message
-		}
-	}()
-
 }
 
 func (model *Model) CheckWinner() Winner {

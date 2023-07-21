@@ -3,26 +3,16 @@ package controller
 import (
 	"constraint/model"
 	"errors"
-	"sync"
 )
 
 type Controller struct {
-	model model.Model
-	mutex sync.Mutex
+	model *model.Model
 }
 
-func NewController(size uint) Controller {
+func NewController(model *model.Model) Controller {
 	return Controller{
-		model: model.NewModel(size),
+		model: model,
 	}
-}
-
-func (controller *Controller) AddView(c chan<- (model.UpdateMessage)) (model.Mark, model.Field) {
-	// acquire lock on mutex
-	controller.mutex.Lock()
-	defer controller.mutex.Unlock()
-
-	return controller.model.AddListener(c)
 }
 
 func isSafePos(pos model.Pos, size uint) bool {
@@ -36,10 +26,6 @@ func isMarkAdjacent(pos model.Pos, lastPos model.Pos) bool {
 }
 
 func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
-	// acquire lock on mutex
-	controller.mutex.Lock()
-	defer controller.mutex.Unlock()
-
 	//check if game is over
 	if controller.model.CheckWinner() != model.NoWinner {
 		return errors.New("game over")
@@ -79,12 +65,4 @@ func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
 	// finalize move
 	controller.model.PutMark(pos, mark)
 	return nil
-}
-
-func (controller *Controller) Close() {
-	// acquire lock on mutex
-	controller.mutex.Lock()
-	defer controller.mutex.Unlock()
-
-	controller.model.Close()
 }
