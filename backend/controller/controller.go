@@ -16,14 +16,20 @@ func NewController(model *model.Model) Controller {
 }
 
 func isSafePos(pos model.Pos, size uint) bool {
-	println(pos.X, pos.Y)
 	return pos.X >= 0 && pos.Y >= 0 && pos.X < int(size) && pos.Y < int(size)
 }
 
+func intAbs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func isMarkAdjacent(pos model.Pos, lastPos model.Pos) bool {
-	varX := lastPos.X - pos.X
-	varY := lastPos.Y - pos.Y
-	return varX < -1 || varX > 1 || varY < -1 || varY > 1
+	varX := intAbs(lastPos.X - pos.X)
+	varY := intAbs(lastPos.Y - pos.Y)
+	return (varX == 1 && varY <= 1) || (varY == 1 && varX <= 1)
 }
 
 func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
@@ -59,7 +65,7 @@ func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
 	}
 
 	// check to see il move is adjacent the previous one
-	if isMarkAdjacent(pos, controller.model.History[len(controller.model.History)-1]) {
+	if !isMarkAdjacent(pos, controller.model.History[len(controller.model.History)-1]) {
 		return errors.New("invalid position")
 	}
 

@@ -2,20 +2,29 @@ package viewmodel
 
 import "constraint/model"
 
+const (
+	CONTROLLER = "CONTROLLER"
+	STARTING   = "STARTING"
+	MODEL      = "MODEL"
+)
+
 // signals that your action was handled
 type ControllerResponse struct {
+	Id        string `json:"id"`
 	Succesful bool   `json:"successful"`
-	Error     string `json:"error"`
+	Error     string `json:"error,omitempty"`
 }
 
 // signals the start of communications between client and view,
 // with info about the game
 type StartingInfo struct {
+	Id    string      `json:"id"`
 	Field model.Field `json:"field"`
 	Mark  model.Mark  `json:"mark"`
 }
 
 type ModelUpdate struct {
+	Id     string       `json:"id"`
 	Field  model.Field  `json:"field"`
 	Winner model.Winner `json:"winner"`
 }

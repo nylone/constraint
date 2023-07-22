@@ -32,21 +32,27 @@ func HandleClient(
 				panic(err)
 			}
 		}
+		// output has been closed, notify client
+		conn.WriteJSON(struct {
+			Id string `json:"id"`
+		}{Id: "CLOSED"})
 	}()
 
 	// listen for client messages and send them to viewmodel
 	input := vm.AddClient(output)
-	go func() {
-		var v viewmodel.AddPos
-		for {
-			err := conn.ReadJSON(&v)
-			println(v.Pos.X)
-			if err != nil {
-				panic(err)
+	if input != nil {
+		go func() {
+			var v viewmodel.AddPos
+			for {
+				err := conn.ReadJSON(&v)
+				if err != nil {
+					close(input)
+					return
+				}
+				input <- v
 			}
-			input <- v
-		}
-	}()
+		}()
+	}
 
 	return nil
 }

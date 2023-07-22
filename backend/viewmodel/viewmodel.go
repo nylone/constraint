@@ -28,18 +28,21 @@ func (viewmodel *Viewmodel) AddClient(output chan<- (interface{})) chan<- (AddPo
 	// determine if client is a player or a spectator
 	viewmodel.mutex.Lock()
 	defer viewmodel.mutex.Unlock()
+	// if the game is over don't add a new client
+	if viewmodel.isOver {
+		return nil
+	}
 	viewmodel.outputs = append(viewmodel.outputs, output)
 	mark := model.NoMark
 	if len(viewmodel.outputs) <= 2 {
 		mark = model.Mark(len(viewmodel.outputs))
 	}
 	// send info about the game to the client
-	defer func() {
-		output <- StartingInfo{
-			Field: viewmodel.model.Field,
-			Mark:  mark,
-		}
-	}()
+	output <- StartingInfo{
+		Id:    STARTING,
+		Field: viewmodel.model.Field,
+		Mark:  mark,
+	}
 
 	// if we are a spectator, don't create an event listener
 	if mark == model.NoMark {
@@ -57,12 +60,21 @@ func (viewmodel *Viewmodel) AddClient(output chan<- (interface{})) chan<- (AddPo
 			// call the controller and add the mark
 			err := viewmodel.controller.AddMark(v.Pos, mark)
 			if err != nil {
-				output <- ControllerResponse{Succesful: false, Error: err.Error()}
+				output <- ControllerResponse{
+					Id:        CONTROLLER,
+					Succesful: false,
+					Error:     err.Error(),
+				}
+				viewmodel.mutex.Unlock()
 				continue
 			}
-			output <- ControllerResponse{Succesful: true}
+			output <- ControllerResponse{
+				Id:        CONTROLLER,
+				Succesful: true,
+			}
 			// if all went well notify every player of the new model state
 			modelUpdate := ModelUpdate{
+				Id:     MODEL,
 				Field:  viewmodel.model.Field,
 				Winner: viewmodel.model.CheckWinner(),
 			}
