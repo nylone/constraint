@@ -16,16 +16,11 @@ const (
 	Player2
 )
 
-type UpdateMessage struct {
-	Pos    Pos
-	Mark   Mark
-	Winner Winner
-}
-
 type Field [][]Mark
 
 type Pos struct {
-	X, Y int
+	X int `json:"x"`
+	Y int `json:"y"`
 }
 
 type Model struct {

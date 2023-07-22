@@ -1,75 +1,52 @@
 package view
 
 import (
-	"constraint/controller"
-	"constraint/model"
-	"sync"
+	"constraint/viewmodel"
+	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
-type View struct {
-	mutex      sync.Mutex
-	model      model.Model
-	controller controller.Controller
-	outputs    []chan<- (interface{})
-	isOver     bool
+var wsupgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
 
-func NewView() View {
-	model := model.NewModel(8)
-	controller := controller.NewController(&model)
+func HandleClient(
+	w http.ResponseWriter,
+	r *http.Request,
+	vm *viewmodel.Viewmodel,
+) error {
+	// upgrade client connection to websocket
+	conn, err := wsupgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return err
+	}
 
-	return View{
-		model:      model,
-		controller: controller,
-	}
-}
-
-func (view *View) AddClient(input <-chan (AddPos), output chan<- (interface{})) {
-	// determine if client is a player or a spectator
-	view.mutex.Lock()
-	defer view.mutex.Unlock()
-	view.outputs = append(view.outputs, output)
-	mark := model.NoMark
-	if len(view.outputs) <= 2 {
-		mark = model.Mark(len(view.outputs))
-	}
-	// send info about the game to the client
-	output <- StartingInfo{
-		Field: view.model.Field,
-		Mark:  mark,
-	}
-	// goroutine to look at client messages
+	// start listening for viewmodel messages and sending them to the client
+	output := make(chan interface{})
 	go func() {
-		// as long as the client is connected the loop continues
-		for v := range input {
-			view.mutex.Lock()
-
-			// call the controller and add the mark
-			err := view.controller.AddMark(v.Pos, mark)
+		for v := range output {
+			err := conn.WriteJSON(v)
 			if err != nil {
-				output <- err
-				continue
-			}
-			output <- Ok{}
-			// if all went well notify every player of the new model state
-			modelUpdate := ModelUpdate{
-				Field:  view.model.Field,
-				Winner: view.model.CheckWinner(),
-			}
-			for _, c := range view.outputs {
-				c <- modelUpdate
-			}
-
-			view.mutex.Unlock()
-		}
-		// if we're here it's because the client has shut down
-		// acquire the lock and close the game if not already closed
-		view.mutex.Lock()
-		defer view.mutex.Unlock()
-		if !view.isOver {
-			for _, c := range view.outputs {
-				close(c)
+				panic(err)
 			}
 		}
 	}()
+
+	// listen for client messages and send them to viewmodel
+	input := vm.AddClient(output)
+	go func() {
+		var v viewmodel.AddPos
+		for {
+			err := conn.ReadJSON(&v)
+			println(v.Pos.X)
+			if err != nil {
+				panic(err)
+			}
+			input <- v
+		}
+	}()
+
+	return nil
 }

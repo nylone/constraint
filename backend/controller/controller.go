@@ -16,7 +16,8 @@ func NewController(model *model.Model) Controller {
 }
 
 func isSafePos(pos model.Pos, size uint) bool {
-	return pos.X > 0 && pos.Y > 0 && pos.X < int(size) && pos.Y < int(size)
+	println(pos.X, pos.Y)
+	return pos.X >= 0 && pos.Y >= 0 && pos.X < int(size) && pos.Y < int(size)
 }
 
 func isMarkAdjacent(pos model.Pos, lastPos model.Pos) bool {
