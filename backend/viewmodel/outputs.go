@@ -5,7 +5,7 @@ import "constraint/model"
 const (
 	CONTROLLER = "CONTROLLER"
 	STARTING   = "STARTING"
-	MODEL      = "MODEL"
+	UPDATE     = "UPDATE"
 )
 
 // signals that your action was handled
@@ -25,6 +25,6 @@ type StartingInfo struct {
 
 type ModelUpdate struct {
 	Id     string       `json:"id"`
-	Field  model.Field  `json:"field"`
+	Pos    model.Pos    `json:"pos"`
 	Winner model.Winner `json:"winner"`
 }

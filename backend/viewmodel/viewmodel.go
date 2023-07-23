@@ -54,11 +54,11 @@ func (viewmodel *Viewmodel) AddClient(output chan<- (interface{})) chan<- (AddPo
 	// goroutine to look at client events
 	go func() {
 		// as long as the client is connected the loop continues
-		for v := range input {
+		for in := range input {
 			viewmodel.mutex.Lock()
 
 			// call the controller and add the mark
-			err := viewmodel.controller.AddMark(v.Pos, mark)
+			err := viewmodel.controller.AddMark(in.Pos, mark)
 			if err != nil {
 				output <- ControllerResponse{
 					Id:        CONTROLLER,
@@ -74,8 +74,8 @@ func (viewmodel *Viewmodel) AddClient(output chan<- (interface{})) chan<- (AddPo
 			}
 			// if all went well notify every player of the new model state
 			modelUpdate := ModelUpdate{
-				Id:     MODEL,
-				Field:  viewmodel.model.Field,
+				Id:     UPDATE,
+				Pos:    in.Pos,
 				Winner: viewmodel.model.CheckWinner(),
 			}
 			for _, c := range viewmodel.outputs {
