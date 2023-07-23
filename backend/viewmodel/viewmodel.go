@@ -3,6 +3,7 @@ package viewmodel
 import (
 	"constraint/controller"
 	"constraint/model"
+	"errors"
 	"sync"
 )
 
@@ -10,7 +11,7 @@ type Viewmodel struct {
 	mutex      sync.Mutex
 	model      model.Model
 	controller controller.Controller
-	outputs    []chan<- (interface{})
+	outputs    map[string]chan<- (interface{})
 	isOver     bool
 }
 
@@ -21,42 +22,57 @@ func NewView() Viewmodel {
 	return Viewmodel{
 		model:      model,
 		controller: controller,
+		outputs:    make(map[string]chan<- interface{}),
 	}
 }
 
-func (viewmodel *Viewmodel) AddClient(output chan<- (interface{})) chan<- (AddPos) {
+func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{})) (chan<- (AddPos), error) {
 	// determine if client is a player or a spectator
 	viewmodel.mutex.Lock()
 	defer viewmodel.mutex.Unlock()
 	// if the game is over don't add a new client
 	if viewmodel.isOver {
-		return nil
+		return nil, errors.New("game over")
 	}
-	viewmodel.outputs = append(viewmodel.outputs, output)
+	// check if nickname is already in use
+	if _, ok := viewmodel.outputs[nickname]; ok {
+		return nil, errors.New("nickname in use")
+	}
+	// tell other clients that a new player has joined
+	for _, c := range viewmodel.outputs {
+		c <- NewClientInfo{
+			Id:       NEWCLIENT,
+			Nickname: nickname,
+		}
+	}
+	// subscribe new view with nickname
+	viewmodel.outputs[nickname] = output
+	// decide if view is player or spectator
 	mark := model.NoMark
 	if len(viewmodel.outputs) <= 2 {
 		mark = model.Mark(len(viewmodel.outputs))
 	}
-	// send info about the game to the client
-	output <- StartingInfo{
-		Id:    STARTING,
-		Field: viewmodel.model.Field,
-		Mark:  mark,
-	}
-
+	// send info about the game to the client asyncronously
+	go func() {
+		viewmodel.mutex.Lock()
+		defer viewmodel.mutex.Unlock()
+		output <- StartingInfo{
+			Id:    STARTING,
+			Field: viewmodel.model.Field,
+			Mark:  mark,
+		}
+	}()
 	// if we are a spectator, don't create an event listener
 	if mark == model.NoMark {
-		return nil
+		return nil, nil
 	}
 	// create the input channel
 	input := make(chan (AddPos))
-
-	// goroutine to look at client events
+	// client event listener
 	go func() {
 		// as long as the client is connected the loop continues
 		for in := range input {
 			viewmodel.mutex.Lock()
-
 			// call the controller and add the mark
 			err := viewmodel.controller.AddMark(in.Pos, mark)
 			if err != nil {
@@ -81,7 +97,6 @@ func (viewmodel *Viewmodel) AddClient(output chan<- (interface{})) chan<- (AddPo
 			for _, c := range viewmodel.outputs {
 				c <- modelUpdate
 			}
-
 			viewmodel.mutex.Unlock()
 		}
 		// if we're here it's because the client has shut down
@@ -95,6 +110,6 @@ func (viewmodel *Viewmodel) AddClient(output chan<- (interface{})) chan<- (AddPo
 			viewmodel.isOver = true
 		}
 	}()
-
-	return input
+	// return input channel to the client
+	return input, nil
 }

@@ -20,7 +20,7 @@ func main() {
 	})
 
 	r.GET("/ws", func(c *gin.Context) {
-		err := view.HandleClient(c.Writer, c.Request, &vm)
+		err := view.HandleClient(c.Writer, c.Request, "user", &vm)
 		if err != nil {
 			println(err.Error())
 		}

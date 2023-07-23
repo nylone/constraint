@@ -3,6 +3,7 @@ package view
 import (
 	"constraint/viewmodel"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -15,6 +16,7 @@ var wsupgrader = websocket.Upgrader{
 func HandleClient(
 	w http.ResponseWriter,
 	r *http.Request,
+	nick string,
 	vm *viewmodel.Viewmodel,
 ) error {
 	// upgrade client connection to websocket
@@ -23,9 +25,31 @@ func HandleClient(
 		return err
 	}
 
-	// start listening for viewmodel messages and sending them to the client
+	// used to syncronize the connection successful message with the rest of the application
+	writerMutex := sync.Mutex{}
+	writerMutex.Lock()
+	defer writerMutex.Unlock()
+
+	// channel to listen for viewmodel updates
 	output := make(chan interface{})
+	// listen for client messages and send them to viewmodel
+	input, err := vm.AddClient(nick, output)
+	if err != nil {
+		conn.WriteJSON(viewmodel.JoinResponse{
+			Id:        viewmodel.CONNECTED,
+			Succesful: false,
+			Error:     err.Error(),
+		})
+		return nil
+	}
+	conn.WriteJSON(viewmodel.JoinResponse{
+		Id:        viewmodel.CONNECTED,
+		Succesful: true,
+	})
+	// start listening for viewmodel messages and sending them to the client
 	go func() {
+		writerMutex.Lock()
+		defer writerMutex.Unlock()
 		for v := range output {
 			err := conn.WriteJSON(v)
 			if err != nil {
@@ -37,9 +61,7 @@ func HandleClient(
 			Id string `json:"id"`
 		}{Id: "CLOSED"})
 	}()
-
-	// listen for client messages and send them to viewmodel
-	input := vm.AddClient(output)
+	// client event listener
 	if input != nil {
 		go func() {
 			var v viewmodel.AddPos
