@@ -109,6 +109,9 @@ func TestAddMark(t *testing.T) {
 	}
 
 	// test all other edge cases
+	if contr.AddMark(model.Pos{X: 0, Y: 0}, model.NoMark) == nil {
+		t.Fatal("AddMark failed to recognise spectator")
+	}
 	if contr.AddMark(model.Pos{X: 0, Y: 0}, model.P2Mark) == nil {
 		t.Fatal("AddMark failed to recognise invalid position")
 	}

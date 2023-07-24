@@ -33,6 +33,10 @@ func isMarkAdjacent(pos model.Pos, lastPos model.Pos) bool {
 }
 
 func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
+	if mark == model.NoMark {
+		return errors.New("not a player")
+	}
+
 	//check if game is over
 	if controller.model.CheckWinner() != model.NoWinner {
 		return errors.New("game over")
@@ -41,7 +45,7 @@ func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
 	// special rules apply if it's the first round
 	if len(controller.model.History) == 0 {
 		// check to see if it's the correct turn
-		if mark == model.P2Mark {
+		if mark != model.P1Mark {
 			return errors.New("wrong turn")
 		}
 		// check to see if it's the position is safe

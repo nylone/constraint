@@ -13,20 +13,20 @@ func HandleClient(conn *websocket.Conn, nick string, vm *viewmodel.Viewmodel) {
 	input, err := vm.AddClient(nick, output)
 	if err != nil {
 		conn.WriteJSON(viewmodel.JoinResponse{
-			Id:        viewmodel.CONNECTED,
+			Id:        viewmodel.OutputConnected,
 			Succesful: false,
 			Error:     err.Error(),
 		})
 		return
 	}
 	conn.WriteJSON(viewmodel.JoinResponse{
-		Id:        viewmodel.CONNECTED,
+		Id:        viewmodel.OutputConnected,
 		Succesful: true,
 	})
 	// client event listener
 	if input != nil {
 		go func() {
-			var v viewmodel.AddPos
+			var v viewmodel.Action
 			for {
 				err := conn.ReadJSON(&v)
 				if err != nil {
@@ -39,13 +39,6 @@ func HandleClient(conn *websocket.Conn, nick string, vm *viewmodel.Viewmodel) {
 	}
 	// start listening for viewmodel messages and sending them to the client
 	for v := range output {
-		err := conn.WriteJSON(v)
-		if err != nil {
-			panic(err)
-		}
+		conn.WriteJSON(v)
 	}
-	// output has been closed, notify client
-	conn.WriteJSON(struct {
-		Id string `json:"id"`
-	}{Id: "CLOSED"})
 }

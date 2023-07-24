@@ -22,7 +22,8 @@
       }
 
       c.onopen = function(){
-        send(JSON.stringify({pos:{x: 1,y: 1}}))
+        send(JSON.stringify({id: 0, pos:{x: 1,y: 1}}))
+        send(JSON.stringify({id: 1, msg: "ciao a tutti"}))
       }
     </script>
 

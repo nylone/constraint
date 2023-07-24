@@ -26,7 +26,7 @@ func NewView() Viewmodel {
 	}
 }
 
-func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{})) (chan<- (AddPos), error) {
+func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{})) (chan<- (Action), error) {
 	// determine if client is a player or a spectator
 	viewmodel.mutex.Lock()
 	defer viewmodel.mutex.Unlock()
@@ -41,7 +41,7 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{
 	// tell other clients that a new player has joined
 	for _, c := range viewmodel.outputs {
 		c <- NewClientInfo{
-			Id:       NEWCLIENT,
+			Id:       OutputNewClient,
 			Nickname: nickname,
 		}
 	}
@@ -57,45 +57,55 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{
 		viewmodel.mutex.Lock()
 		defer viewmodel.mutex.Unlock()
 		output <- StartingInfo{
-			Id:    STARTING,
+			Id:    OutputStarting,
 			Field: viewmodel.model.Field,
 			Mark:  mark,
 		}
 	}()
-	// if we are a spectator, don't create an event listener
-	if mark == model.NoMark {
-		return nil, nil
-	}
 	// create the input channel
-	input := make(chan (AddPos))
+	input := make(chan (Action))
 	// client event listener
 	go func() {
 		// as long as the client is connected the loop continues
 		for in := range input {
 			viewmodel.mutex.Lock()
-			// call the controller and add the mark
-			err := viewmodel.controller.AddMark(in.Pos, mark)
-			if err != nil {
-				output <- ControllerResponse{
-					Id:        CONTROLLER,
-					Succesful: false,
-					Error:     err.Error(),
+			switch in.Id {
+			case InputAddPos:
+				{
+					// call the controller and add the mark
+					err := viewmodel.controller.AddMark(in.Pos, mark)
+					if err != nil {
+						output <- ControllerResponse{
+							Id:        OutputController,
+							Succesful: false,
+							Error:     err.Error(),
+						}
+						break
+					}
+					output <- ControllerResponse{
+						Id:        OutputController,
+						Succesful: true,
+					}
+					// if all went well notify every player of the new model state
+					modelUpdate := ModelUpdate{
+						Id:     OutputUpdate,
+						Pos:    in.Pos,
+						Winner: viewmodel.model.CheckWinner(),
+					}
+					for _, c := range viewmodel.outputs {
+						c <- modelUpdate
+					}
 				}
-				viewmodel.mutex.Unlock()
-				continue
-			}
-			output <- ControllerResponse{
-				Id:        CONTROLLER,
-				Succesful: true,
-			}
-			// if all went well notify every player of the new model state
-			modelUpdate := ModelUpdate{
-				Id:     UPDATE,
-				Pos:    in.Pos,
-				Winner: viewmodel.model.CheckWinner(),
-			}
-			for _, c := range viewmodel.outputs {
-				c <- modelUpdate
+			case InputMsg:
+				{
+					msg := ChatMesage{
+						Id:  OutputChatMesage,
+						Msg: in.Msg,
+					}
+					for _, c := range viewmodel.outputs {
+						c <- msg
+					}
+				}
 			}
 			viewmodel.mutex.Unlock()
 		}
@@ -105,6 +115,7 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{
 		defer viewmodel.mutex.Unlock()
 		if !viewmodel.isOver {
 			for _, c := range viewmodel.outputs {
+				c <- GameClosed{Id: OutputClosed}
 				close(c)
 			}
 			viewmodel.isOver = true

@@ -1,25 +1,29 @@
 package viewmodel
 
-import "constraint/model"
+import (
+	"constraint/model"
+)
 
 const (
-	CONTROLLER = "CONTROLLER"
-	STARTING   = "STARTING"
-	UPDATE     = "UPDATE"
-	NEWCLIENT  = "NEW_CLIENT"
-	CONNECTED  = "CONNECTED"
+	OutputController = iota
+	OutputStarting
+	OutputUpdate
+	OutputNewClient
+	OutputConnected
+	OutputClosed
+	OutputChatMesage
 )
 
 // sent only after joining a lobby
 type JoinResponse struct {
-	Id        string `json:"id"`
+	Id        int    `json:"id"`
 	Succesful bool   `json:"successful"`
 	Error     string `json:"error,omitempty"`
 }
 
 // signals that your action was handled
 type ControllerResponse struct {
-	Id        string `json:"id"`
+	Id        int    `json:"id"`
 	Succesful bool   `json:"successful"`
 	Error     string `json:"error,omitempty"`
 }
@@ -27,7 +31,7 @@ type ControllerResponse struct {
 // signals the start of communications between client and view,
 // with info about the game
 type StartingInfo struct {
-	Id    string      `json:"id"`
+	Id    int         `json:"id"`
 	Field model.Field `json:"field"`
 	Mark  model.Mark  `json:"mark"`
 }
@@ -35,12 +39,21 @@ type StartingInfo struct {
 // signals the start of communications between client and view,
 // with info about the game
 type NewClientInfo struct {
-	Id       string `json:"id"`
+	Id       int    `json:"id"`
 	Nickname string `json:"nickname"`
 }
 
 type ModelUpdate struct {
-	Id     string       `json:"id"`
+	Id     int          `json:"id"`
 	Pos    model.Pos    `json:"pos"`
 	Winner model.Winner `json:"winner"`
+}
+
+type GameClosed struct {
+	Id int `json:"id"`
+}
+
+type ChatMesage struct {
+	Id  int    `json:"id"`
+	Msg string `json:"msg"`
 }
