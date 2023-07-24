@@ -27,7 +27,10 @@ var (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	r.ForwardedByClientIP = true
+	r.SetTrustedProxies([]string{"127.0.0.1"})
 	r.LoadHTMLFiles("index.html")
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", nil)
@@ -72,7 +75,6 @@ func main() {
 			lobby.clientCount--
 			if lobby.clientCount == 0 {
 				delete(lobbies, lobbyID)
-				println("deleted " + lobbyID)
 				return
 			}
 			lobbies[lobbyID] = lobby
