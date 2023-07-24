@@ -55,5 +55,6 @@ type GameClosed struct {
 
 type ChatMesage struct {
 	Id  int    `json:"id"`
+	By  string `json:"by"`
 	Msg string `json:"msg"`
 }

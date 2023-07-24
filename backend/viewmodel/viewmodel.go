@@ -100,6 +100,7 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{
 				{
 					msg := ChatMesage{
 						Id:  OutputChatMesage,
+						By:  nickname,
 						Msg: in.Msg,
 					}
 					for _, c := range viewmodel.outputs {
