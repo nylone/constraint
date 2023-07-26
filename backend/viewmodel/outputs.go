@@ -14,13 +14,6 @@ const (
 	OutputChatMesage
 )
 
-// sent only after joining a lobby
-type JoinResponse struct {
-	Id        int    `json:"id"`
-	Succesful bool   `json:"successful"`
-	Error     string `json:"error,omitempty"`
-}
-
 // signals that your action was handled
 type ControllerResponse struct {
 	Id        int    `json:"id"`
@@ -53,7 +46,7 @@ type GameClosed struct {
 	Id int `json:"id"`
 }
 
-type ChatMesage struct {
+type ChatMessage struct {
 	Id  int    `json:"id"`
 	By  string `json:"by"`
 	Msg string `json:"msg"`

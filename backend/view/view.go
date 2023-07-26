@@ -6,20 +6,27 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// sent only after joining a lobby
+type JoinResponse struct {
+	Id        int    `json:"id"`
+	Succesful bool   `json:"successful"`
+	Error     string `json:"error,omitempty"`
+}
+
 func HandleClient(conn *websocket.Conn, nick string, vm *viewmodel.Viewmodel) {
 	// channel to listen for viewmodel updates
 	output := make(chan interface{})
 	// listen for client messages and send them to viewmodel
 	input, err := vm.AddClient(nick, output)
 	if err != nil {
-		conn.WriteJSON(viewmodel.JoinResponse{
+		conn.WriteJSON(JoinResponse{
 			Id:        viewmodel.OutputConnected,
 			Succesful: false,
 			Error:     err.Error(),
 		})
 		return
 	}
-	conn.WriteJSON(viewmodel.JoinResponse{
+	conn.WriteJSON(JoinResponse{
 		Id:        viewmodel.OutputConnected,
 		Succesful: true,
 	})

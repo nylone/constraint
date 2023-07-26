@@ -50,7 +50,7 @@ func main() {
 			return
 		}
 		if _, ok := lobbies[lobbyID]; !ok {
-			vm := viewmodel.NewView()
+			vm := viewmodel.NewViewmodel()
 			lobbies[lobbyID] = lobby{
 				vm: &vm,
 			}

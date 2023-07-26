@@ -11,11 +11,11 @@ type Viewmodel struct {
 	mutex      sync.Mutex
 	model      model.Model
 	controller controller.Controller
-	outputs    map[string]chan<- (interface{})
+	outputs    map[string]chan<- interface{}
 	isOver     bool
 }
 
-func NewView() Viewmodel {
+func NewViewmodel() Viewmodel {
 	model := model.NewModel(8)
 	controller := controller.NewController(&model)
 
@@ -26,7 +26,7 @@ func NewView() Viewmodel {
 	}
 }
 
-func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{})) (chan<- (Action), error) {
+func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- interface{}) (chan<- Action, error) {
 	// determine if client is a player or a spectator
 	viewmodel.mutex.Lock()
 	defer viewmodel.mutex.Unlock()
@@ -63,7 +63,7 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{
 		}
 	}()
 	// create the input channel
-	input := make(chan (Action))
+	input := make(chan Action)
 	// client event listener
 	go func() {
 		// as long as the client is connected the loop continues
@@ -98,7 +98,7 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- (interface{
 				}
 			case InputMsg:
 				{
-					msg := ChatMesage{
+					msg := ChatMessage{
 						Id:  OutputChatMesage,
 						By:  nickname,
 						Msg: in.Msg,
