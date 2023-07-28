@@ -68,7 +68,7 @@ func main() {
 
 		go func() {
 			view.HandleClient(conn, nickname, vm)
-
+			// when client is done, see if the lobby needs to be freed
 			lobbiesMutex.Lock()
 			defer lobbiesMutex.Unlock()
 			lobby := lobbies[lobbyID]
@@ -78,7 +78,6 @@ func main() {
 				return
 			}
 			lobbies[lobbyID] = lobby
-			// when client is done, see if the lobby needs to be freed
 		}()
 	})
 

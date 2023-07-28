@@ -70,7 +70,7 @@ func TestAddClient(t *testing.T) {
 		t.Fatal("viewmodel failed to add client correctly")
 	}
 
-	time.Sleep(1000000000)
+	time.Sleep(1000000)
 
 	c1.in <- Action{
 		Id:  InputMsg,
@@ -108,7 +108,7 @@ func TestAddClient(t *testing.T) {
 		t.Fatal("viewmodel failed to reject client correctly")
 	}
 
-	time.Sleep(1000000000)
+	time.Sleep(1000000)
 
 	go func() {
 		mutex.Lock()
