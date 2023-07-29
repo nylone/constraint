@@ -1,2 +1,12 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script>
+    import {Button} from 'flowbite-svelte';
+    import {Heading} from 'flowbite-svelte';
+</script>
+
+
+<Heading tag="h1" class="mb-4">Constraint</Heading>
+<Button outline > Start </Button>
+<Button href="/Rules" outline> Rules </Button>
+<Button outline> Settings</Button>
+
+
