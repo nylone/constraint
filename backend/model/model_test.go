@@ -12,6 +12,7 @@ func TestNewModel(t *testing.T) {
 		}
 	}
 }
+
 func TestPutMark(t *testing.T) {
 	model := NewModel(8)
 	model.PutMark(Pos{X: 0, Y: 0}, P1Mark)

@@ -16,24 +16,24 @@ const (
 
 // signals that your action was handled
 type ControllerResponse struct {
+	Error     string `json:"error,omitempty"`
 	Id        int    `json:"id"`
 	Succesful bool   `json:"successful"`
-	Error     string `json:"error,omitempty"`
 }
 
 // signals the start of communications between client and view,
 // with info about the game
 type StartingInfo struct {
-	Id    int         `json:"id"`
 	Field model.Field `json:"field"`
+	Id    int         `json:"id"`
 	Mark  model.Mark  `json:"mark"`
 }
 
 // signals the start of communications between client and view,
 // with info about the game
 type NewClientInfo struct {
-	Id       int    `json:"id"`
 	Nickname string `json:"nickname"`
+	Id       int    `json:"id"`
 }
 
 type ModelUpdate struct {
@@ -47,7 +47,7 @@ type GameClosed struct {
 }
 
 type ChatMessage struct {
-	Id  int    `json:"id"`
 	By  string `json:"by"`
 	Msg string `json:"msg"`
+	Id  int    `json:"id"`
 }

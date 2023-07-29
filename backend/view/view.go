@@ -1,16 +1,16 @@
 package view
 
 import (
-	"constraint/viewmodel"
-
 	"github.com/gorilla/websocket"
+
+	"constraint/viewmodel"
 )
 
 // sent only after joining a lobby
 type JoinResponse struct {
-	Id        int    `json:"id"`
-	Succesful bool   `json:"successful"`
 	Error     string `json:"error,omitempty"`
+	Succesful bool   `json:"successful"`
+	Id        int    `json:"id"`
 }
 
 func HandleClient(conn *websocket.Conn, nick string, vm *viewmodel.Viewmodel) {

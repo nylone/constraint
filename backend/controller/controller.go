@@ -1,8 +1,9 @@
 package controller
 
 import (
-	"constraint/model"
 	"errors"
+
+	"constraint/model"
 )
 
 type Controller struct {
@@ -37,7 +38,7 @@ func (controller *Controller) AddMark(pos model.Pos, mark model.Mark) error {
 		return errors.New("not a player")
 	}
 
-	//check if game is over
+	// check if game is over
 	if controller.model.CheckWinner() != model.NoWinner {
 		return errors.New("game over")
 	}

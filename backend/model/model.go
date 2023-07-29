@@ -24,9 +24,9 @@ type Pos struct {
 }
 
 type Model struct {
-	Size    uint
 	Field   Field
 	History []Pos
+	Size    uint
 }
 
 func NewModel(size uint) Model {

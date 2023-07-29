@@ -1,8 +1,9 @@
 package controller
 
 import (
-	"constraint/model"
 	"testing"
+
+	"constraint/model"
 )
 
 func genController() Controller {

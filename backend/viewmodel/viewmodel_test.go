@@ -1,10 +1,11 @@
 package viewmodel
 
 import (
-	"constraint/model"
 	"sync"
 	"testing"
 	"time"
+
+	"constraint/model"
 )
 
 type client struct {

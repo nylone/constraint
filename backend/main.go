@@ -1,14 +1,15 @@
 package main
 
 import (
-	"constraint/view"
-	"constraint/viewmodel"
+	"internal/itoa"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+
+	"constraint/view"
+	"constraint/viewmodel"
 )
 
 var wsupgrader = websocket.Upgrader{
@@ -31,13 +32,8 @@ func main() {
 	r := gin.Default()
 	r.ForwardedByClientIP = true
 	r.SetTrustedProxies([]string{"127.0.0.1"})
-	r.LoadHTMLFiles("index.html")
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index.html", nil)
-	})
 
-	r.GET("/ws", func(c *gin.Context) {
-		nickname := c.DefaultQuery("nickname", "Guest "+time.Now().String())
+	r.GET("/", func(c *gin.Context) {
 		lobbyID := c.Query("lobby")
 		if lobbyID == "" {
 			c.String(http.StatusBadRequest, "missing lobby id")
@@ -55,16 +51,19 @@ func main() {
 				vm: &vm,
 			}
 		}
-		// upgrade client connection to websocket
-		conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
-		if err != nil {
-			return
-		}
 
 		lobby := lobbies[lobbyID]
 		vm := lobby.vm
 		lobby.clientCount++
 		lobbies[lobbyID] = lobby
+
+		nickname := c.DefaultQuery("nickname", "Guest "+itoa.Itoa(lobby.clientCount))
+
+		// upgrade client connection to websocket
+		conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			return
+		}
 
 		go func() {
 			view.HandleClient(conn, nickname, vm)

@@ -1,17 +1,18 @@
 package viewmodel
 
 import (
-	"constraint/controller"
-	"constraint/model"
 	"errors"
 	"sync"
+
+	"constraint/controller"
+	"constraint/model"
 )
 
 type Viewmodel struct {
-	mutex      sync.Mutex
-	model      model.Model
-	controller controller.Controller
 	outputs    map[string]chan<- interface{}
+	controller controller.Controller
+	model      model.Model
+	mutex      sync.Mutex
 	isOver     bool
 }
 
