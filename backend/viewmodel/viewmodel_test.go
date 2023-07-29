@@ -46,7 +46,7 @@ func TestAddClient(t *testing.T) {
 				checkCount(1)
 			case NewClientInfo:
 				checkCount(0)
-			case GameClosed:
+			case ClientLeft:
 				checkCount(5)
 				return
 			case ChatMessage:
@@ -122,7 +122,7 @@ func TestAddClient(t *testing.T) {
 				checkCount(6 + 1)
 			case NewClientInfo:
 				failed = true
-			case GameClosed:
+			case ClientLeft:
 				checkCount(6 + 3)
 				return
 			case ChatMessage:

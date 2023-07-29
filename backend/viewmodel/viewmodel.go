@@ -8,12 +8,17 @@ import (
 	"constraint/model"
 )
 
+type player struct {
+	output chan<- interface{}
+	mark   model.Mark
+}
+
 type Viewmodel struct {
-	outputs    map[string]chan<- interface{}
+	players    map[string]player
 	controller controller.Controller
 	model      model.Model
-	mutex      sync.Mutex
-	isOver     bool
+	Mutex      sync.Mutex
+	IsOver     bool
 }
 
 func NewViewmodel() Viewmodel {
@@ -23,44 +28,51 @@ func NewViewmodel() Viewmodel {
 	return Viewmodel{
 		model:      model,
 		controller: controller,
-		outputs:    make(map[string]chan<- interface{}),
+		players:    make(map[string]player),
 	}
 }
 
 func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- interface{}) (chan<- Action, error) {
 	// determine if client is a player or a spectator
-	viewmodel.mutex.Lock()
-	defer viewmodel.mutex.Unlock()
+	viewmodel.Mutex.Lock()
+	defer viewmodel.Mutex.Unlock()
 	// if the game is over don't add a new client
-	if viewmodel.isOver {
+	if viewmodel.IsOver {
 		return nil, errors.New("game over")
 	}
 	// check if nickname is already in use
-	if _, ok := viewmodel.outputs[nickname]; ok {
+	if _, ok := viewmodel.players[nickname]; ok {
 		return nil, errors.New("nickname in use")
 	}
+	// decide if view is player or spectator
+	mark := model.NoMark
+	if len(viewmodel.players) < 2 {
+		mark = model.Mark(len(viewmodel.players) + 1)
+	}
 	// tell other clients that a new player has joined
-	for _, c := range viewmodel.outputs {
-		c <- NewClientInfo{
+	for _, p := range viewmodel.players {
+		p.output <- NewClientInfo{
 			Id:       OutputNewClient,
+			Mark:     mark,
 			Nickname: nickname,
 		}
 	}
 	// subscribe new view with nickname
-	viewmodel.outputs[nickname] = output
-	// decide if view is player or spectator
-	mark := model.NoMark
-	if len(viewmodel.outputs) <= 2 {
-		mark = model.Mark(len(viewmodel.outputs))
-	}
+	viewmodel.players[nickname] = player{mark: mark, output: output}
 	// send info about the game to the client asyncronously
 	go func() {
-		viewmodel.mutex.Lock()
-		defer viewmodel.mutex.Unlock()
+		viewmodel.Mutex.Lock()
+		defer viewmodel.Mutex.Unlock()
+		players := make(map[string]model.Mark)
+
+		for k, p := range viewmodel.players {
+			players[k] = p.mark
+		}
+
 		output <- StartingInfo{
-			Id:    OutputStarting,
-			Field: viewmodel.model.Field,
-			Mark:  mark,
+			Players: players,
+			Id:      OutputStarting,
+			Field:   viewmodel.model.Field,
 		}
 	}()
 	// create the input channel
@@ -69,7 +81,7 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- interface{}
 	go func() {
 		// as long as the client is connected the loop continues
 		for in := range input {
-			viewmodel.mutex.Lock()
+			viewmodel.Mutex.Lock()
 			switch in.Id {
 			case InputAddPos:
 				{
@@ -91,10 +103,11 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- interface{}
 					modelUpdate := ModelUpdate{
 						Id:     OutputUpdate,
 						Pos:    in.Pos,
+						Mark:   mark,
 						Winner: viewmodel.model.CheckWinner(),
 					}
-					for _, c := range viewmodel.outputs {
-						c <- modelUpdate
+					for _, p := range viewmodel.players {
+						p.output <- modelUpdate
 					}
 				}
 			case InputMsg:
@@ -104,23 +117,41 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- interface{}
 						By:  nickname,
 						Msg: in.Msg,
 					}
-					for _, c := range viewmodel.outputs {
-						c <- msg
+					for _, p := range viewmodel.players {
+						p.output <- msg
 					}
 				}
 			}
-			viewmodel.mutex.Unlock()
+			viewmodel.Mutex.Unlock()
 		}
 		// if we're here it's because the client has shut down
 		// acquire the lock and close the game if not already closed
-		viewmodel.mutex.Lock()
-		defer viewmodel.mutex.Unlock()
-		if !viewmodel.isOver {
-			for _, c := range viewmodel.outputs {
-				c <- GameClosed{Id: OutputClosed}
-				close(c)
+		viewmodel.Mutex.Lock()
+		defer viewmodel.Mutex.Unlock()
+
+		if !viewmodel.IsOver {
+			if mark == model.NoMark {
+				delete(viewmodel.players, nickname)
+				close(output)
+				for _, p := range viewmodel.players {
+					p.output <- ClientLeft{
+						Id:       OutputClosed,
+						Shutdown: false,
+						Nickname: nickname,
+					}
+				}
+				return
 			}
-			viewmodel.isOver = true
+
+			viewmodel.IsOver = true
+			for _, p := range viewmodel.players {
+				p.output <- ClientLeft{
+					Id:       OutputClosed,
+					Shutdown: true,
+					Nickname: nickname,
+				}
+				close(p.output)
+			}
 		}
 	}()
 	// return input channel to the client

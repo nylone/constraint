@@ -31,19 +31,17 @@ func HandleClient(conn *websocket.Conn, nick string, vm *viewmodel.Viewmodel) {
 		Succesful: true,
 	})
 	// client event listener
-	if input != nil {
-		go func() {
-			var v viewmodel.Action
-			for {
-				err := conn.ReadJSON(&v)
-				if err != nil {
-					close(input)
-					return
-				}
-				input <- v
+	go func() {
+		var v viewmodel.Action
+		for {
+			err := conn.ReadJSON(&v)
+			if err != nil {
+				close(input)
+				return
 			}
-		}()
-	}
+			input <- v
+		}
+	}()
 	// start listening for viewmodel messages and sending them to the client
 	for v := range output {
 		conn.WriteJSON(v)

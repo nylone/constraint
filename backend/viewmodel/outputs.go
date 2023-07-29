@@ -24,26 +24,30 @@ type ControllerResponse struct {
 // signals the start of communications between client and view,
 // with info about the game
 type StartingInfo struct {
-	Field model.Field `json:"field"`
-	Id    int         `json:"id"`
-	Mark  model.Mark  `json:"mark"`
+	Players map[string]model.Mark `json:"players"`
+	Field   model.Field           `json:"field"`
+	Id      int                   `json:"id"`
 }
 
 // signals the start of communications between client and view,
 // with info about the game
 type NewClientInfo struct {
-	Nickname string `json:"nickname"`
-	Id       int    `json:"id"`
+	Nickname string     `json:"nickname"`
+	Mark     model.Mark `json:"mark"`
+	Id       int        `json:"id"`
 }
 
 type ModelUpdate struct {
 	Id     int          `json:"id"`
 	Pos    model.Pos    `json:"pos"`
+	Mark   model.Mark   `json:"mark"`
 	Winner model.Winner `json:"winner"`
 }
 
-type GameClosed struct {
-	Id int `json:"id"`
+type ClientLeft struct {
+	Nickname string `json:"nickname"`
+	Id       int    `json:"id"`
+	Shutdown bool   `json:"shutdown"`
 }
 
 type ChatMessage struct {

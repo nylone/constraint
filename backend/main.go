@@ -1,7 +1,6 @@
 package main
 
 import (
-	"internal/itoa"
 	"net/http"
 	"sync"
 
@@ -18,8 +17,7 @@ var wsupgrader = websocket.Upgrader{
 }
 
 type lobby struct {
-	vm          *viewmodel.Viewmodel
-	clientCount int
+	vm *viewmodel.Viewmodel
 }
 
 var (
@@ -30,10 +28,15 @@ var (
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	r.LoadHTMLFiles("index.html")
 	r.ForwardedByClientIP = true
 	r.SetTrustedProxies([]string{"127.0.0.1"})
 
 	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", struct{}{})
+	})
+
+	r.GET("/ws", func(c *gin.Context) {
 		lobbyID := c.Query("lobby")
 		if lobbyID == "" {
 			c.String(http.StatusBadRequest, "missing lobby id")
@@ -52,13 +55,15 @@ func main() {
 			}
 		}
 
+		// get the lobby
 		lobby := lobbies[lobbyID]
 		vm := lobby.vm
-		lobby.clientCount++
-		lobbies[lobbyID] = lobby
 
-		nickname := c.DefaultQuery("nickname", "Guest "+itoa.Itoa(lobby.clientCount))
-
+		nickname := c.Query("nickname")
+		if nickname == "" {
+			c.String(http.StatusBadRequest, "missing nickname")
+			return
+		}
 		// upgrade client connection to websocket
 		conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
@@ -70,13 +75,16 @@ func main() {
 			// when client is done, see if the lobby needs to be freed
 			lobbiesMutex.Lock()
 			defer lobbiesMutex.Unlock()
-			lobby := lobbies[lobbyID]
-			lobby.clientCount--
-			if lobby.clientCount == 0 {
-				delete(lobbies, lobbyID)
-				return
+
+			lobby, ok := lobbies[lobbyID]
+			if ok {
+				lobby.vm.Mutex.Lock()
+				defer lobby.vm.Mutex.Unlock()
+				if lobby.vm.IsOver {
+					delete(lobbies, lobbyID)
+					return
+				}
 			}
-			lobbies[lobbyID] = lobby
 		}()
 	})
 
