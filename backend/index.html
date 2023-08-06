@@ -8,7 +8,7 @@
     <pre id="output"></pre>
 
     <script>
-      url = 'ws://localhost:8080/ws?lobby=ciao&nickname=nylone'+Date.now();
+      url = 'ws://localhost:8080/?lobby=ciao&nickname=nylone'+Date.now();
       c = new WebSocket(url);
       
       send = function(data){

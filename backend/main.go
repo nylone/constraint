@@ -6,10 +6,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/kkyr/fig"
 
 	"constraint/view"
 	"constraint/viewmodel"
 )
+
+type Config struct {
+	Proxy      string `fig:"proxy" default:"127.0.0.1"`
+	Bind       string `fig:"bind" default:"127.0.0.1:8080"`
+	LobbyLimit int    `fig:"lobby_limit" default:"1000"`
+}
 
 var wsupgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -21,22 +28,25 @@ type lobby struct {
 }
 
 var (
+	cfg          Config
 	lobbies      map[string]lobby = make(map[string]lobby)
 	lobbiesMutex sync.Mutex
 )
 
+func init() {
+	err := fig.Load(&cfg)
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
 func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	r.LoadHTMLFiles("index.html")
 	r.ForwardedByClientIP = true
-	r.SetTrustedProxies([]string{"127.0.0.1"})
+	r.SetTrustedProxies([]string{cfg.Proxy})
 
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", struct{}{})
-	})
-
-	r.GET("/ws", func(c *gin.Context) {
 		lobbyID := c.Query("lobby")
 		if lobbyID == "" {
 			c.String(http.StatusBadRequest, "missing lobby id")
@@ -44,7 +54,7 @@ func main() {
 		}
 		lobbiesMutex.Lock()
 		defer lobbiesMutex.Unlock()
-		if len(lobbies) == 1000 {
+		if len(lobbies) >= cfg.LobbyLimit {
 			c.String(http.StatusForbidden, "too many lobbies")
 			return
 		}
@@ -88,5 +98,5 @@ func main() {
 		}()
 	})
 
-	r.Run("localhost:8080")
+	r.Run(cfg.Bind)
 }

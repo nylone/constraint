@@ -1,0 +1,4 @@
+# config.yaml
+proxy: "127.0.0.1"
+bind: "127.0.0.1:8080"
+lobby_limit: 1000
