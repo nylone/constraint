@@ -15,12 +15,16 @@ import (
 type Config struct {
 	Proxy      string `fig:"proxy" default:"127.0.0.1"`
 	Bind       string `fig:"bind" default:"127.0.0.1:8080"`
+	FEOrigin   string `fig:"fe_origin" default:"127.0.0.1:80"`
 	LobbyLimit int    `fig:"lobby_limit" default:"1000"`
 }
 
 var wsupgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return r.Header.Get("Origin") == cfg.FEOrigin
+	},
 }
 
 type lobby struct {
@@ -77,6 +81,7 @@ func main() {
 		// upgrade client connection to websocket
 		conn, err := wsupgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
+			c.String(http.StatusNotAcceptable, err.Error())
 			return
 		}
 
