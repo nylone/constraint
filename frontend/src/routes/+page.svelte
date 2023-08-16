@@ -5,8 +5,8 @@
 
 
 <Heading tag="h1" class="mb-4">Constraint</Heading>
-<Button outline > Start </Button>
-<Button href="/Rules" outline> Rules </Button>
+<Button href="/play" outline > Start </Button>
+<Button href="/rules" outline> Rules </Button>
 <Button outline> Settings</Button>
 
 
