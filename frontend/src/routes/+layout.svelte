@@ -8,3 +8,7 @@
 		<slot />
 	</div>
 </div>
+
+<style>
+	@import '../assets/theme.css';
+</style>
