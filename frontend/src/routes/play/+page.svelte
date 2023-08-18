@@ -5,7 +5,7 @@
 
     let nickname = ""
     let lobby_id = ""
-    let play = true
+    let play = false
 
     // TODO: input check
 
