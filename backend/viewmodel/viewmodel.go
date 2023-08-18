@@ -57,12 +57,14 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- interface{}
 			Nickname: nickname,
 		}
 	}
+	// create the input channel
+	input := make(chan Action)
 	// subscribe new view with nickname
 	viewmodel.players[nickname] = player{mark: mark, output: output}
-	// send info about the game to the client asyncronously
+	// client event listener
 	go func() {
+		// send info about the game to the client asyncronously
 		viewmodel.Mutex.Lock()
-		defer viewmodel.Mutex.Unlock()
 		players := make(map[string]model.Mark)
 
 		for k, p := range viewmodel.players {
@@ -74,11 +76,7 @@ func (viewmodel *Viewmodel) AddClient(nickname string, output chan<- interface{}
 			Id:      OutputStarting,
 			Field:   viewmodel.model.Field,
 		}
-	}()
-	// create the input channel
-	input := make(chan Action)
-	// client event listener
-	go func() {
+		viewmodel.Mutex.Unlock()
 		// as long as the client is connected the loop continues
 		for in := range input {
 			viewmodel.Mutex.Lock()

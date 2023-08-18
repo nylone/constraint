@@ -6,27 +6,20 @@ import (
 	"constraint/viewmodel"
 )
 
-// sent only after joining a lobby
-type JoinResponse struct {
-	Error     string `json:"error,omitempty"`
-	Succesful bool   `json:"successful"`
-	Id        int    `json:"id"`
-}
-
 func HandleClient(conn *websocket.Conn, nick string, vm *viewmodel.Viewmodel) {
 	// channel to listen for viewmodel updates
 	output := make(chan interface{})
 	// listen for client messages and send them to viewmodel
 	input, err := vm.AddClient(nick, output)
 	if err != nil {
-		conn.WriteJSON(JoinResponse{
+		conn.WriteJSON(viewmodel.JoinResponse{
 			Id:        viewmodel.OutputConnected,
 			Succesful: false,
 			Error:     err.Error(),
 		})
 		return
 	}
-	conn.WriteJSON(JoinResponse{
+	conn.WriteJSON(viewmodel.JoinResponse{
 		Id:        viewmodel.OutputConnected,
 		Succesful: true,
 	})
