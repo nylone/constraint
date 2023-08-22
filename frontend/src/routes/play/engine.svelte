@@ -1,6 +1,6 @@
 <script>
     import { Table, TableBody, TableBodyCell, TableBodyRow } from 'flowbite-svelte'
-    import { Heading, P } from 'flowbite-svelte'
+    import { Heading, P, Input } from 'flowbite-svelte'
 
     // Props 
     export let lobby_id = ""
@@ -8,15 +8,9 @@
 
     // Variables
     let grid = Array.from(Array(8), () => new Array(8))
-    let ActionId = 0 
-    /* 
-        Sets the desired action:
-            0 - Add position. This is the default action
-            1 - Send message
-    */
 
     let players = 1
-    let msg = ''
+    let messages = ['Attempting connection']
     let error = false
     let mark
     let MatchOver = false
@@ -36,11 +30,10 @@
         switch(signal_id) {
             case 0: // OutputController signal
                 if(!signal["successful"]) {
-                    msg = signal["error"]
+                    messages.length = messages.push(`ERROR: ${signal["error"]}`)
                     error = true
                 }
                 else {
-                    msg = ''
                     error = false
                 }
                 break;
@@ -60,41 +53,47 @@
                 
                 // checks if there's a winner
                 if(signal["winner"] === mark) {
-                    msg = `${nickname} won the match`
+                    messages.length = messages.push(`${nickname} won the match`)
                     MatchOver = true
                 }
                 break;
             case 3: // NewClientInfo signal
                 players++
                 mark = signal["mark"]
-                msg = `${signal["nickname"]} has connected to the lobby`
+                messages.length = messages.push(`${signal["nickname"]} has connected to the lobby`)
                 break;
             case 4: // JoinResponse signal
                 if(!signal["successful"]) {
-                    msg = signal["error"]
+                    messages.length = messages.push(`ERROR: ${signal["error"]}`)
                     error = true
                 }
                 else {
-                    msg = 'Successfully connected'
+                    messages.length = messages.push('Successfully connected')
                     error = false
                 }
                 break;
             case 5: // ClientLeft signal
                 MatchOver = signal["shutdown"]
-                msg = `${signal["nickname"]} has left the lobby`
+                messages.length = messages.push(`${signal["nickname"]} has left the lobby`)
                 break;
             case 6: // ChatMessage signal
+                messages.length = messages.push(`${signal["by"]}: ${signal["msg"]}`)
                 break;
         }
-        console.log(signal)
     }
 
+    // Chat message handler
+    function send_msg(e) {
+        let msg = document.getElementById("chat")
+        if(e.key === "Enter" && msg.value != '') {
+            socket.send(JSON.stringify({id: 1, msg: msg.value}))
+            msg.value = ''
+        }
+    }
 
     // Various functions
     function send_move(x, y) {
-        if(ActionId === 0) {
-            socket.send(JSON.stringify({id: ActionId, pos:{x: x, y: y}}))
-        }
+        socket.send(JSON.stringify({id: 0, pos:{x: x, y: y}}))
     }
 
 </script>
@@ -105,6 +104,11 @@
             Waiting for players ...
         </Heading>
     {/if}
+
+    {#if MatchOver} 
+        <Heading tag="h3"> Match is over </Heading>
+    {/if}
+
     <P> Players: {players} </P>
     <Table>
         <TableBody tableBodyClass="border-4">
@@ -114,7 +118,7 @@
                     <TableBodyCell
                         id={`col-${col_index}`} 
                         tdClass="border px-6 py-4 whitespace-nowrap font-medium "
-                        on:click={() => send_move(col_index, row_index)}
+                        on:click={() => send_move(col_index, row_index, 0)}
                     >
                     {#if grid[row_index][col_index] != undefined}
                         {grid[row_index][col_index]}
@@ -126,14 +130,14 @@
         </TableBody>
     </Table>
     <Heading tag="h5">Console</Heading>
-    {#if msg != '' && !error} 
-        <P > {msg} </P> 
-    {:else if msg != '' && error}
+    {#each messages as msg}
+        {#if msg != undefined && !error}
+            <P> {msg} </P> 
+        {:else if msg != undefined && error}
         <P color="text-red-700 dark:text-red-500"> {msg} </P>
-    {/if} 
+        {/if}
+    {/each}
 
-    {#if MatchOver} 
-        <Heading tag="h3"> Match is over </Heading>
-    {/if}
+    <Input id="chat" class="mt-5" size="lg" placeholder="Message" on:keydown={send_msg} />
 
 </div>
