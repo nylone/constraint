@@ -48,9 +48,21 @@
                 if(Object.keys(signal["players"]).length > 1) {
                     players = Object.keys(signal["players"]).length
                 }
+                mark = signal["players"][nickname] // Assigns the associated mark 
                 grid = signal["field"]
                 break;
             case 2: // ModelUpdate signal
+                // updates the grid with the added position
+                let x = signal["pos"]["x"]
+                let y = signal["pos"]["y"]
+                let placed_mark = signal["mark"]
+                grid[y][x] = placed_mark
+                
+                // checks if there's a winner
+                if(signal["winner"] === mark) {
+                    msg = `${nickname} won the match`
+                    MatchOver = true
+                }
                 break;
             case 3: // NewClientInfo signal
                 players++
@@ -74,6 +86,7 @@
             case 6: // ChatMessage signal
                 break;
         }
+        console.log(signal)
     }
 
 
@@ -81,7 +94,6 @@
     function send_move(x, y) {
         if(ActionId === 0) {
             socket.send(JSON.stringify({id: ActionId, pos:{x: x, y: y}}))
-            grid[y][x] = 'x'
         }
     }
 
