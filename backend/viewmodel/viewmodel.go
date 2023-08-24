@@ -15,8 +15,8 @@ type player struct {
 
 type Viewmodel struct {
 	players    map[string]player
-	controller controller.Controller
-	model      model.Model
+	controller *controller.Controller
+	model      *model.Model
 	Mutex      sync.Mutex
 	IsOver     bool
 }
@@ -26,8 +26,8 @@ func NewViewmodel() Viewmodel {
 	controller := controller.NewController(&model)
 
 	return Viewmodel{
-		model:      model,
-		controller: controller,
+		model:      &model,
+		controller: &controller,
 		players:    make(map[string]player),
 	}
 }
